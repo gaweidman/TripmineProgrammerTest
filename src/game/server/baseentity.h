@@ -949,6 +949,8 @@ public:
 	bool			IsCombatCharacter() { return MyCombatCharacterPointer() == NULL ? false : true; }
 	bool			IsInWorld( void ) const;
 	virtual bool	IsCombatItem( void ) const { return false; }
+	virtual bool	IsDoor( void ) const { return false; }
+	virtual bool	IsCuttableDoor( void ) const { return false; }
 
 	virtual bool	IsBaseCombatWeapon( void ) const { return false; }
 	virtual bool	IsWearable( void ) const { return false; }

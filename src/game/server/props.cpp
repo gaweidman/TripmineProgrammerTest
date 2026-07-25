@@ -5427,6 +5427,13 @@ void CPropDoorRotating::InputSetRotationDistance( inputdata_t &inputdata )
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenBack, &m_vecBackBoundsMin, &m_vecBackBoundsMax );
 }
 
+void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
+{
+	AssertMsg1(inputdata.value.Float() > 0.0f, "InputSetSpeed on %s called with negative parameter!", GetDebugName());
+	m_flSpeed = inputdata.value.Float();
+	DoorResume();
+}
+
 // Debug sphere
 class CPhysSphere : public CPhysicsProp
 {
@@ -5451,15 +5458,46 @@ public:
 	}
 };
 
-void CPropDoorRotating::InputSetSpeed(inputdata_t &inputdata)
+LINK_ENTITY_TO_CLASS(prop_sphere, CPhysSphere);
+
+// ------------------------------------------------------------------------------------------ //
+// For OBM. These are the doors the engineers cut down.
+// ------------------------------------------------------------------------------------------ //
+class CPropDoorCuttable : public CPropDoorRotating
 {
-	AssertMsg1(inputdata.value.Float() > 0.0f, "InputSetSpeed on %s called with negative parameter!", GetDebugName() );
-	m_flSpeed = inputdata.value.Float();
-	DoorResume();
+	DECLARE_CLASS(CPropDoorCuttable, CPropDoorRotating);
+
+public:
+	DECLARE_DATADESC();
+	void			Precache(void);
+	virtual bool	IsCuttableDoor( void ) const { return true; }
+	void			UpdateOnRemove(void);
+
+};
+
+void CPropDoorCuttable::Precache(void)
+{
+	PrecacheModel("models/props_c17/door01_left.mdl");
 }
 
-LINK_ENTITY_TO_CLASS( prop_sphere, CPhysSphere );
+void CPropDoorCuttable::UpdateOnRemove(void)
+{
+	BaseClass::UpdateOnRemove();
+	/*  disabled because i need to program a door entity to
+		fall down predictably. physics props do not fall
+		predictably
 
+	CBaseEntity *doorProp = CPhysicsProp::CreateNoSpawn("prop_physics", GetAbsOrigin(), GetAbsAngles());
+	doorProp->SetModelName(AllocPooledString("models/props_c17/door01_left.mdl"));
+	doorProp->SetModel("models/props_c17/door01_left.mdl");
+	doorProp->Spawn();
+	*/
+}
+
+BEGIN_DATADESC(CPropDoorCuttable)
+END_DATADESC()
+
+LINK_ENTITY_TO_CLASS(prop_door_cuttable, CPropDoorCuttable);
 
 // ------------------------------------------------------------------------------------------ //
 // Special version of func_physbox.
