@@ -931,17 +931,26 @@ void CNPC_Citizen::GatherConditions()
 
 	// recognizing cuttable doors. we don't look around for one if
 	// there are enemies nearby
-	CBaseEntity *entsInSphere[31];
-	int numEntsInSphere = UTIL_EntitiesInSphere(entsInSphere, 31, GetAbsOrigin(), 100, 0);
-	bool foundCuttableDoor = false;
+	DevMsg("%s\n", GetKeyValue("IsEngineer", false, 1));
+	if (IsEngineer())
+	{
+		CBaseEntity *entsInSphere[31];
+		int numEntsInSphere = UTIL_EntitiesInSphere(entsInSphere, 31, GetAbsOrigin(), 100, 0);
+		bool foundCuttableDoor = false;
 
-	for (int i = 0; i < numEntsInSphere && !foundCuttableDoor; i++) {
-		CBaseEntity *sphereEnt = entsInSphere[i];
+		for (int i = 0; i < numEntsInSphere && !foundCuttableDoor; i++) {
+			CBaseEntity *sphereEnt = entsInSphere[i];
 
-		if (sphereEnt->IsCuttableDoor())
+			if (sphereEnt->IsCuttableDoor())
+			{
+				SetDoorCutTarget(sphereEnt);
+				foundCuttableDoor = true;
+			}
+		}
+
+		if (!foundCuttableDoor)
 		{
-			SetDoorCutTarget(sphereEnt);
-			foundCuttableDoor = true;
+			ClearCondition(COND_CIT_FOUNDCUTTABLEDOOR);
 		}
 	}
 	 
@@ -1201,7 +1210,7 @@ int CNPC_Citizen::SelectSchedule()
 	}
 
 	// if we have a cuttable door and we don't see any enemies, start cutting down 
-	if (!HasCondition(COND_SEE_ENEMY) && HasCondition(COND_CIT_FOUNDCUTTABLEDOOR))
+	if (IsEngineer() && !HasCondition(COND_SEE_ENEMY) && HasCondition(COND_CIT_FOUNDCUTTABLEDOOR))
 	{
 		return SCHED_CITIZEN_CUT_DOOR_DOWN;
 	}
@@ -1644,22 +1653,22 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_GET_PATH_TO_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(m_pCuttableDoorTarget))
+		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
 		{
 
 			SetIdealActivity(ACT_DO_NOT_DISTURB);
-			QAngle doorAngles = m_pCuttableDoorTarget->GetAbsAngles();
+			QAngle doorAngles = GetCuttableDoorTarget()->GetAbsAngles();
 			Vector fwd, rt, up;
 			AngleVectors(doorAngles, &fwd, &rt, &up);
 			// magic numbers here, but valve's talented programmers use them so i'm gonna call it 
 			// fair gamethis gives you a point on the ground, centered horizontally on, and
 			// directly in front of the door.
-			Vector frontOfDoor = m_pCuttableDoorTarget->GetAbsOrigin() + fwd * 30 - rt * 0.562 + up * -108/2;
+			Vector frontOfDoor = GetCuttableDoorTarget()->GetAbsOrigin() + fwd * 30 - rt * 0.562 + up * -108 / 2;
 
 			AI_NavGoal_t goal(frontOfDoor);
 
 			goal.type = GOALTYPE_LOCATION;
-			goal.pTarget = m_pCuttableDoorTarget;
+			goal.pTarget = GetCuttableDoorTarget();
 
 			GetNavigator()->SetGoal(goal);
 			TaskComplete();
@@ -1671,9 +1680,9 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_FACE_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(m_pCuttableDoorTarget))
+		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
 		{
-			QAngle targetAngles = m_pCuttableDoorTarget->GetAbsAngles();
+			QAngle targetAngles = GetCuttableDoorTarget()->GetAbsAngles();
 			Vector fwd, rt, up;
 			AngleVectors(targetAngles, &fwd, &rt, &up);
 			// to get them facing the proper direction, we rotate by 90 degrees
@@ -1690,12 +1699,12 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 
 
 	case TASK_CIT_PLAY_DOOR_CUT_SOUND:
-		if (UTIL_IsValidEntity(m_pCuttableDoorTarget))
+		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
 		{
 			// for sound reasons, we should maybe make the blowtorch
 			// a weapon and make it emit the sound instead of the door
 			// placeholder sound. just wanted something loopable
-			m_pCuttableDoorTarget->EmitSound("Airboat.FireGunLoop");
+			GetCuttableDoorTarget()->EmitSound("Airboat.FireGunLoop");
 			TaskComplete();
 		}
 		else
@@ -1706,11 +1715,10 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_DESTROY_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(m_pCuttableDoorTarget))
+		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
 		{
-			
-			m_pCuttableDoorTarget->StopSound("Airboat.FireGunLoop");
-			m_pCuttableDoorTarget->Remove();
+			GetCuttableDoorTarget()->StopSound("Airboat.FireGunLoop");
+			GetCuttableDoorTarget()->Remove();
 			TaskComplete();
 		}
 		else
@@ -3970,7 +3978,28 @@ bool CNPC_Citizen::UseSemaphore(void)
 void CNPC_Citizen::SetDoorCutTarget(CBaseEntity *pTarget)
 {
 	SetCondition(COND_CIT_FOUNDCUTTABLEDOOR);
-	m_pCuttableDoorTarget = pTarget;
+	SetCuttableDoorTarget(pTarget);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+CBaseEntity * CNPC_Citizen::GetCuttableDoorTarget()
+{
+	return m_pCuttableDoorTarget;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CNPC_Citizen::SetCuttableDoorTarget( CBaseEntity *pCuttableDoorTarget)
+{
+	m_pCuttableDoorTarget = pCuttableDoorTarget;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+bool CNPC_Citizen::IsEngineer()
+{
+	return m_bIsEngineer;
 }
 
 //-----------------------------------------------------------------------------

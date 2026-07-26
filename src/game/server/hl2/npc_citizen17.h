@@ -229,6 +229,9 @@ public:
 #endif
 
 	void			SetDoorCutTarget( CBaseEntity *pTarget );
+	CBaseEntity *	GetCuttableDoorTarget();
+	void			SetCuttableDoorTarget(CBaseEntity *pDoor);
+	bool			IsEngineer();
 
 	//---------------------------------
 	// Inputs
@@ -312,7 +315,7 @@ private:
 	float			m_flTimeLastCloseToPlayer;
 	string_t		m_iszDenyCommandConcept;
 	bool			m_bIsEngineer;
-	CBaseEntity		*m_pCuttableDoorTarget;
+	EHANDLE			m_pCuttableDoorTarget;
 
 	CSimpleSimTimer	m_AutoSummonTimer;
 	Vector			m_vAutoSummonAnchor;
