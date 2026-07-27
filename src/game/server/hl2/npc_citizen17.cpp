@@ -339,6 +339,7 @@ DEFINE_KEYFIELD(m_bNeverLeavePlayerSquad, FIELD_BOOLEAN, "neverleaveplayersquad"
 DEFINE_KEYFIELD(m_iszDenyCommandConcept, FIELD_STRING, "denycommandconcept"),
 DEFINE_KEYFIELD(m_bIsEngineer, FIELD_BOOLEAN, "IsEngineer"),
 
+
 DEFINE_OUTPUT(m_OnJoinedPlayerSquad, "OnJoinedPlayerSquad"),
 DEFINE_OUTPUT(m_OnLeftPlayerSquad, "OnLeftPlayerSquad"),
 DEFINE_OUTPUT(m_OnFollowOrder, "OnFollowOrder"),
@@ -929,10 +930,10 @@ void CNPC_Citizen::GatherConditions()
 		m_flNextHealthSearchTime = gpGlobals->curtime + 4.0;
 	}
 
-	// recognizing cuttable doors. we don't look around for one if
+	// recognizing cuttable doors. we don't look around for one is
 	// there are enemies nearby
-	DevMsg("%s\n", GetKeyValue("IsEngineer", false, 1));
-	if (IsEngineer())
+
+	if (m_bIsEngineer)
 	{
 		CBaseEntity *entsInSphere[31];
 		int numEntsInSphere = UTIL_EntitiesInSphere(entsInSphere, 31, GetAbsOrigin(), 100, 0);
@@ -1653,8 +1654,8 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_GET_PATH_TO_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
-		{
+		if (GetCuttableDoorTarget())
+		{	
 
 			SetIdealActivity(ACT_DO_NOT_DISTURB);
 			QAngle doorAngles = GetCuttableDoorTarget()->GetAbsAngles();
@@ -1663,7 +1664,7 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 			// magic numbers here, but valve's talented programmers use them so i'm gonna call it 
 			// fair gamethis gives you a point on the ground, centered horizontally on, and
 			// directly in front of the door.
-			Vector frontOfDoor = GetCuttableDoorTarget()->GetAbsOrigin() + fwd * 30 - rt * 0.562 + up * -108 / 2;
+			Vector frontOfDoor = GetCuttableDoorTarget()->GetAbsOrigin() + fwd * 30 + rt * 0.562 + up * -108 / 2;
 
 			AI_NavGoal_t goal(frontOfDoor);
 
@@ -1680,7 +1681,7 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_FACE_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
+		if (GetCuttableDoorTarget())
 		{
 			QAngle targetAngles = GetCuttableDoorTarget()->GetAbsAngles();
 			Vector fwd, rt, up;
@@ -1699,7 +1700,7 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 
 
 	case TASK_CIT_PLAY_DOOR_CUT_SOUND:
-		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
+		if (GetCuttableDoorTarget())
 		{
 			// for sound reasons, we should maybe make the blowtorch
 			// a weapon and make it emit the sound instead of the door
@@ -1715,7 +1716,7 @@ void CNPC_Citizen::StartTask(const Task_t *pTask)
 		break;
 
 	case TASK_CIT_DESTROY_CUTTABLE_DOOR:
-		if (UTIL_IsValidEntity(GetCuttableDoorTarget()))
+		if (GetCuttableDoorTarget())
 		{
 			GetCuttableDoorTarget()->StopSound("Airboat.FireGunLoop");
 			GetCuttableDoorTarget()->Remove();
